@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/interfaces/IERC3156FlashLender.sol";
 
-contract Attacker {
+contract AttackerNaive {
     address public constant ETH = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
 
     constructor (address _pool, address _receiver) {

@@ -37,17 +37,7 @@ describe('[Challenge] Naive receiver', function () {
     });
 
     it('Execution', async function () {
-        // const ETH = await pool.ETH();
-
-        // for(let i=0; i<10; i++)
-        // await pool.connect(player).flashLoan(
-        //     receiver.address,
-        //     ETH,
-        //     0,
-        //     []
-        // );
-
-        const Attacker = await ethers.getContractFactory('Attacker', player);
+        const Attacker = await ethers.getContractFactory('AttackerNaive', player);
         await Attacker.deploy(pool.address, receiver.address);
     });
 
