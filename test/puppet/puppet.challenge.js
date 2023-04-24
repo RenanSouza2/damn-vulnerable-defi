@@ -179,6 +179,8 @@ describe('[Challenge] Puppet', function () {
 
         const signature = await player.signMessage(message);
         const split = ethers.utils.splitSignature(signature);
+
+        console.log(split);
         
         const Attacker = await ethers.getContractFactory('AttackerPuppet', player);
         const attacker = await Attacker.deploy();
@@ -228,14 +230,12 @@ describe('[Challenge] Puppet', function () {
             split.r,
             split.s
         );
-        const recoverLixo = ethers.utils.verifyMessage(message, split);
-
+        
         console.log();
         console.log(`Player     : ${player.address}`);
         console.log(`Recover out: ${recover_out}`);
         console.log(`Recover 1  : ${recover_1}`);
         console.log(`Recover 2  : ${recover_2}`);
-        console.log(`Recover lix: ${recoverLixo}`);
     });
 
     after(async function () {
