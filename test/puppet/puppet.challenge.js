@@ -146,13 +146,9 @@ describe('[Challenge] Puppet', function () {
             deadline
         );
 
-        const messageBytes = ethers.utils.arrayify(message);
-        const messageHash = ethers.utils.hashMessage(messageBytes);
-        
-        const messageHashBytes = ethers.utils.arrayify(messageHash);
-        // const signature = await player.signMessage(messageHashBytes);
-        const signature = await player.signMessage(messageBytes);
-        const recoveredAddress = ethers.utils.verifyMessage(messageBytes, signature);
+        const messageHash = ethers.utils.hashMessage(message);
+        const signature = await player.signMessage(message);
+        const recoveredAddress = ethers.utils.verifyMessage(message, signature);
         console.log("player  :", player.address);
         console.log("recover1:", recoveredAddress);
 
