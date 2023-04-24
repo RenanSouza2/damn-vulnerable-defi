@@ -73,7 +73,7 @@ describe('Compromised challenge', function () {
         for(signer of signers) {
             await oracle.connect(signer).postPrice('DVNFT', balance);
         }
-
+ 
         await nftToken.connect(player).approve(exchange.address, tokenId);
         await exchange.connect(player).sellOne(tokenId);
     });
