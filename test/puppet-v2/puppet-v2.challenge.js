@@ -82,7 +82,30 @@ describe('[Challenge] Puppet v2', function () {
     });
 
     it('Execution', async function () {
-        /** CODE YOUR SOLUTION HERE */
+        async function getReport() {
+            async function showBalances(tag, id) {
+                const ethBalance = await ethers.provider.getBalance(id.address);
+                const wthBalance = await weth.balanceOf(id.address);
+                const dvtBalance = await token.balanceOf(id.address);
+
+                console.log(tag);
+                console.log(`ETH: ${ethBalance}`);
+                console.log(`wTH: ${wthBalance}`);
+                console.log(`DVT: ${dvtBalance}`);
+            }
+
+            console.log('-----------------------------------------------');
+            await showBalances('player', player);
+            console.log();
+            await showBalances('DEX', uniswapExchange);
+            console.log();
+            await showBalances('pool', lendingPool);
+            console.log('-----------------------------------------------');
+        }
+
+        await getReport();
+
+        
     });
 
     after(async function () {
